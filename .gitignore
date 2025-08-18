@@ -1,0 +1,3 @@
+# Resource directory - keep structure but ignore data files
+resource/*
+!resource/README.md
