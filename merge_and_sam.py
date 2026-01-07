@@ -81,6 +81,7 @@ def main():
     # SAM Preprocessing
     print("Starting SAM preprocessing...")
     
+    adata_combined = adata_combined.raw.to_adata()
     # Rename leiden_clusters to leiden_clusters_raw if it exists, to match user workflow
     if 'leiden_clusters' in adata_combined.obs:
          # Use assignment and delete to ensure we end up with one 'leiden_clusters_raw' column
