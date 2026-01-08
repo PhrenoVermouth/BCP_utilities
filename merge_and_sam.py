@@ -1,16 +1,18 @@
 
-import scanpy as sc
-import anndata as ad
-import os
-import argparse
 import warnings
+
+# Suppress FutureWarnings from anndata before importing scanpy/anndata.
+warnings.filterwarnings("ignore", category=FutureWarning, module="anndata")
+
+import argparse
+import os
+
+import anndata as ad
+import scanpy as sc
 from samalg import SAM
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
-# Suppress warnings as seen in the user logs (optional but keeps output clean)
-warnings.filterwarnings('ignore')
 
 def main():
     parser = argparse.ArgumentParser(description="Merge h5ad files and run SAM preprocessing.")
@@ -18,28 +20,32 @@ def main():
                         help='List of sample names to merge (e.g., hbm hbf mbm)')
     parser.add_argument('-s', '--species', type=str, default='q',
                         help='Species prefix (default: q)')
+    parser.add_argument('--organ', type=str, default='brain',
+                        help='Organ name used in output filename (default: brain)')
     parser.add_argument('-o', '--output', type=str,
-                        help='Output filename (default: <species>_brain_bc.h5ad)')
+                        help='Output filename (default: <species>_<organ>_bc.h5ad)')
     
     args = parser.parse_args()
     samples = args.samples
     species = args.species
+    organ = args.organ
     
     # Set default output filename if not provided
     if args.output:
         output_filename = args.output
     else:
-        output_filename = f"{species}_brain_bc.h5ad"
+        output_filename = f"{species}_{organ}_bc.h5ad"
     
     adatas = []
     
     print(f"Species prefix: {species}")
     print("开始加载数据...")
+    missing_files = []
     for sample in samples:
         # Assuming the directory structure follows the pattern:
         # {species}_{sample}/{species}_{sample}_filtered_QC2.h5ad
         file_path = f"{species}_{sample}/{species}_{sample}_filtered_QC2.h5ad"
-        
+
         if os.path.exists(file_path):
             print(f"Loading {file_path}...")
             try:
@@ -58,7 +64,13 @@ def main():
             except Exception as e:
                  print(f"Error loading {file_path}: {e}")
         else:
-            print(f"Warning: {file_path} not found!")
+            missing_files.append(file_path)
+
+    if missing_files:
+        print("Error: the following input files were not found:")
+        for file_path in missing_files:
+            print(f"  - {file_path}")
+        return
 
     if not adatas:
         print("No valid data found. Exiting.")
